@@ -14,16 +14,9 @@ class RNN(nn.Module):
         self.sn = nn.Softmax(dim=0)
 
     def forward(self, x):
-        h0 = torch.zeros(self.layer_dim, 1, self.hidden_dim)\
+        h0 = torch.zeros(self.layer_dim, x.shape[0], self.hidden_dim)\
                   .requires_grad_()
-
-        # We can make the x into a "batch" by doing this:
-        # x = x.unsqueeze(1)
-        x = x.type(torch.float)
-        x = torch.squeeze(x, dim=1)
-
-        # The hidden state should also be 2d in this case:
-        h0 = h0[0].detach()
+        h0 = h0.detach()
 
         out, hn = self.rnn(x, h0)
 

@@ -2,6 +2,8 @@ import torch
 import numpy as np
 import os
 import string
+from torch.utils.data import Dataset
+from torch.nn.utils.rnn import pad_sequence
 
 all_letters = string.ascii_letters + " .,;'"
 n_letters = len(all_letters)
@@ -21,7 +23,8 @@ def name_to_tensor(line):
     tensor = torch.zeros(len(line), 1, n_letters)
     for li, letter in enumerate(line):
         tensor[li][0][all_letters.find(letter)] = 1
-    tensor = tensor.type(torch.long)
+    tensor = tensor.type(torch.float)
+    tensor = torch.squeeze(tensor, dim=1)
     return tensor
 
 
@@ -58,26 +61,19 @@ def load_data():
     english_samples = data[data[:, 0] == "English"]
 
     arabic_idx = np.random.randint(len(arabic_samples), size=arabic_difference)
-    english_idx = np.random.randint(len(english_samples), size=english_difference)
+    english_idx = np.random.randint(len(english_samples),
+                                    size=english_difference)
 
     data = np.vstack((data, arabic_samples[arabic_idx, :]))
     data = np.vstack((data, english_samples[english_idx, :]))
 
-    print(np.unique(data[:, 0], return_counts=True))
-
     # Create a train and validation set
     np.random.shuffle(data)
-    data_train = data[:int(data.shape[0]*0.8)]
-    data_val = data[int(data.shape[0]*0.8):]
-
-    x_train = data_train[:, 1]
-    y_train = data_train[:, 0]
-    x_val = data_val[:, 1]
-    y_val = data_val[:, 0]
+    x_data = data[:, 1]
+    y_data = data[:, 0]
 
     # One hot encode the names
-    x_train = np.array([name_to_tensor(i) for i in x_train])
-    x_val = np.array([name_to_tensor(i) for i in x_val])
+    x_data = np.array([name_to_tensor(i) for i in x_data])
 
     # Factorise the target
     countries_to_factor_map = {}
@@ -85,14 +81,31 @@ def load_data():
     countries_to_factor_map["Russian"] = torch.Tensor([0, 1, 0])
     countries_to_factor_map["English"] = torch.Tensor([0, 0, 1])
 
-    # y_train = [countries_to_factor_map[i] for i in y_train]
-    # y_train = [torch.reshape(i, (1, 3)) for i in y_train]
-    # y_val = [countries_to_factor_map[i] for i in y_val]
-    # y_val = [torch.reshape(i, (1, 3)) for i in y_val]
+    y_data = [countries_to_factor_map[i] for i in y_data]
 
-    y_train = [countries_to_factor_map[i] for i in y_train]
-    # y_train = [torch.reshape(i, (1, 3)) for i in y_train]
-    y_val = [countries_to_factor_map[i] for i in y_val]
-    # y_val = [torch.reshape(i, (1, 3)) for i in y_val]
+    return x_data, y_data
 
-    return x_train, y_train, x_val, y_val
+
+class NameDataset(Dataset):
+    def __init__(self, x_data, y_data):
+        self.x_data = x_data
+        self.y_data = y_data
+        self.len = len(x_data)
+
+    def __len__(self):
+        return len(self.x_data)
+
+    def __getitem__(self, idx):
+        return (self.x_data[idx], self.y_data[idx])
+
+    def get_batch(self, batch_num):
+        # x_batch = self.x_data[batch_num*500:(batch_num+1)*500]
+        # y_batch = self.y_data[batch_num*500:(batch_num+1)*500]
+
+        x_batch = self.x_data
+        y_batch = self.y_data
+
+        x_batch = pad_sequence(x_batch)
+        y_batch = pad_sequence(y_batch)
+
+        return x_batch, y_batch
