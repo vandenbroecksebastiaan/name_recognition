@@ -1,37 +1,37 @@
-# import torch
-# from tqdm import tqdm
+import torch
+# from torch.nn.utils import clip_grad_norm
 
 
-def train(rnn, optimizer, criterion, dataset):
+def train(rnn, dataset):
 
-    for idx in range(1):
-        # Take an x and y batch
-        x_batch, y_batch = dataset.get_batch(idx)
+    optimizer = torch.optim.SGD(rnn.parameters(), lr=0.01)
+    criterion = torch.nn.CrossEntropyLoss()
 
-        rnn.train()
-        optimizer.zero_grad()
+    max_batch = dataset.max_batch
 
-        # Make a prediction and calculate the loss
-        output = rnn(x_batch)
-        y_batch = y_batch.t()
-        loss = criterion(output, y_batch)
-        print(loss)
+    for epoch in range(100):
+        for idx in range(max_batch):
+            # Take an x and y batch
+            x_batch, y_batch = dataset.get_batch(idx)
 
-        """
-        max_output = torch.max(output, 0, keepdim=True)[1][0].item()
-        max_target = torch.max(y_sample, 0, keepdim=True)[1][0].item()
+            rnn.train()
+            optimizer.zero_grad()
 
-        if max_output == max_target:
-            eval_ = "correct"
-            correct_count += 1
-        else:
-            eval_ = "false"
-            false_count += 1
+            # Make a prediction and calculate the loss
+            output = rnn(x_batch)
+            loss = criterion(output, y_batch)
+            loss.backward()
+            optimizer.step()
 
-        print(idx, loss, max_output, max_target, eval_, "\t",
-              round(correct_count / (correct_count + false_count), 2))
-        """
+            if idx % 500 == 0:
+                max_output = torch.argmax(output).item()
+                max_target = torch.argmax(y_batch).item()
 
-        loss.backward()
-        print(loss)
-        optimizer.step()
+                if max_output == max_target:
+                    correct = True
+                else:
+                    correct = False
+
+                print(epoch, idx, "\t", round(loss.item(), 4), "\t", correct)
+                # print(output)
+                # print(y_batch)

@@ -11,17 +11,18 @@ class RNN(nn.Module):
         self.rnn = nn.RNN(input_dim, hidden_dim, layer_dim, batch_first=True,
                           nonlinearity='relu')
         self.fc = nn.Linear(hidden_dim, output_dim)
-        self.sn = nn.Softmax(dim=0)
+        self.sm = nn.Softmax(dim=0)
+        self.relu = nn.ReLU()
+        self.batchnorm = nn.BatchNorm1d(1024)
 
     def forward(self, x):
         h0 = torch.zeros(self.layer_dim, x.shape[0], self.hidden_dim)\
-                  .requires_grad_()
-        h0 = h0.detach()
+                  .requires_grad_().cuda().detach()
 
         out, hn = self.rnn(x, h0)
-
         out = out[-1, :]
+
         out = self.fc(out)
-        out = self.sn(out)
+        # out = self.sm(out)
 
         return out

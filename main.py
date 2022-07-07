@@ -7,22 +7,18 @@ import torch.nn as nn
 
 
 def main():
-    device = torch.cuda.current_device()
-    print(torch.cuda.get_device_name(device))
+    torch.cuda.device("cuda")
 
     # Load the data
     x_data, y_data = load_data()
-    dataset = NameDataset(x_data, y_data)
+    dataset = NameDataset(x_data, y_data, batch_size=1)
 
     n_categories = 3
     n_letters = 57
 
-    rnn = RNN(input_dim=n_letters, hidden_dim=2**12, layer_dim=1,
-              output_dim=n_categories)
-    optimizer = torch.optim.SGD(rnn.parameters(), lr=0.0001)
-    criterion = nn.CrossEntropyLoss()
-
-    train(rnn, optimizer, criterion, dataset)
+    rnn = RNN(input_dim=n_letters, hidden_dim=1024, layer_dim=3,
+              output_dim=n_categories).cuda()
+    train(rnn, dataset)
 
 
 if __name__ == "__main__":

@@ -73,7 +73,7 @@ def load_data():
     y_data = data[:, 0]
 
     # One hot encode the names
-    x_data = np.array([name_to_tensor(i) for i in x_data])
+    x_data = [name_to_tensor(i) for i in x_data]
 
     # Factorise the target
     countries_to_factor_map = {}
@@ -87,10 +87,12 @@ def load_data():
 
 
 class NameDataset(Dataset):
-    def __init__(self, x_data, y_data):
+    def __init__(self, x_data, y_data, batch_size):
         self.x_data = x_data
         self.y_data = y_data
         self.len = len(x_data)
+        self.batch_size = batch_size
+        self.max_batch = self.len // self.batch_size
 
     def __len__(self):
         return len(self.x_data)
@@ -99,13 +101,12 @@ class NameDataset(Dataset):
         return (self.x_data[idx], self.y_data[idx])
 
     def get_batch(self, batch_num):
-        # x_batch = self.x_data[batch_num*500:(batch_num+1)*500]
-        # y_batch = self.y_data[batch_num*500:(batch_num+1)*500]
+        x_batch = self.x_data[batch_num*self.batch_size:
+                              (batch_num+1)*self.batch_size]
+        y_batch = self.y_data[batch_num*self.batch_size:
+                              (batch_num+1)*self.batch_size]
 
-        x_batch = self.x_data
-        y_batch = self.y_data
-
-        x_batch = pad_sequence(x_batch)
-        y_batch = pad_sequence(y_batch)
+        x_batch = pad_sequence(x_batch).cuda()
+        y_batch = pad_sequence(y_batch).cuda().t()
 
         return x_batch, y_batch
