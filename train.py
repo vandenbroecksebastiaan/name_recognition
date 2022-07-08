@@ -5,14 +5,18 @@ import torch
 def train(rnn, dataset):
 
     optimizer = torch.optim.SGD(rnn.parameters(), lr=0.01)
-    criterion = torch.nn.CrossEntropyLoss()
+    scheduler = torch.optim.lr_scheduler.CyclicLR(
+        optimizer, base_lr=0.0001, max_lr=0.05, cycle_momentum=True
+    )
+    criterion = torch.nn.MSELoss()
 
     max_batch = dataset.max_batch
 
     for epoch in range(100):
-        for idx in range(max_batch):
+
+        for idx in range(max_batch // 2):
             # Take an x and y batch
-            x_batch, y_batch = dataset.get_batch(idx)
+            x_batch, y_batch = dataset.get_train_batch(idx)
 
             rnn.train()
             optimizer.zero_grad()
@@ -23,15 +27,23 @@ def train(rnn, dataset):
             loss.backward()
             optimizer.step()
 
-            if idx % 500 == 0:
-                max_output = torch.argmax(output).item()
-                max_target = torch.argmax(y_batch).item()
+            """
+            print(loss)
+            for i in list(rnn.parameters()):
+                print(i.shape, "\n")
 
-                if max_output == max_target:
-                    correct = True
-                else:
-                    correct = False
+            """
 
-                print(epoch, idx, "\t", round(loss.item(), 4), "\t", correct)
-                # print(output)
-                # print(y_batch)
+            if idx % 100 == 0:
+
+                x_val, y_val = dataset.get_val_batch()
+                val_output = rnn(x_val)
+                val_loss = criterion(val_output, y_val)
+
+                print(epoch, idx, optimizer.param_groups[0]['lr'], "\t",
+                      round(loss.item(), 4),
+                      round(val_loss.item(), 4))
+                print(output[0, :].tolist(),
+                      y_batch[0, :].tolist())
+
+            scheduler.step()

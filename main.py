@@ -3,7 +3,8 @@ from load_data import NameDataset, load_data
 from train import train
 
 import torch
-import torch.nn as nn
+
+# TODO: make an implementation that uses 1d convs
 
 
 def main():
@@ -11,13 +12,21 @@ def main():
 
     # Load the data
     x_data, y_data = load_data()
-    dataset = NameDataset(x_data, y_data, batch_size=1)
+    dataset = NameDataset(x_data, y_data, batch_size=16)
 
     n_categories = 3
     n_letters = 57
 
     rnn = RNN(input_dim=n_letters, hidden_dim=1024, layer_dim=3,
               output_dim=n_categories).cuda()
+
+    """
+    import numpy as np
+    model_parameters = filter(lambda p: p.requires_grad, rnn.parameters())
+    params = sum([np.prod(p.size()) for p in model_parameters])
+    print(params)
+    """
+
     train(rnn, dataset)
 
 

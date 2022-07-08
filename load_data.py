@@ -88,9 +88,13 @@ def load_data():
 
 class NameDataset(Dataset):
     def __init__(self, x_data, y_data, batch_size):
-        self.x_data = x_data
-        self.y_data = y_data
-        self.len = len(x_data)
+        self.x_train = x_data[:int(len(x_data)*0.9)]
+        self.x_val = x_data[int(len(x_data)*0.9):]
+
+        self.y_train = y_data[:int(len(y_data)*0.9)]
+        self.y_val = y_data[int(len(y_data)*0.9):]
+
+        self.len = len(self.x_train)
         self.batch_size = batch_size
         self.max_batch = self.len // self.batch_size
 
@@ -100,11 +104,25 @@ class NameDataset(Dataset):
     def __getitem__(self, idx):
         return (self.x_data[idx], self.y_data[idx])
 
-    def get_batch(self, batch_num):
-        x_batch = self.x_data[batch_num*self.batch_size:
-                              (batch_num+1)*self.batch_size]
-        y_batch = self.y_data[batch_num*self.batch_size:
-                              (batch_num+1)*self.batch_size]
+    def get_train_batch(self, batch_num):
+        x_batch = self.x_train[batch_num*self.batch_size:
+                               (batch_num+1)*self.batch_size]
+        y_batch = self.y_train[batch_num*self.batch_size:
+                               (batch_num+1)*self.batch_size]
+
+        x_batch = pad_sequence(x_batch).cuda()
+        y_batch = pad_sequence(y_batch).cuda().t()
+
+        return x_batch, y_batch
+
+    def get_val_batch(self):
+        # Get the number of a batch
+        max_batch = len(self.x_val) // 128
+        batch_num = torch.randint(low=0, high=max_batch, size=(1, ))
+
+        # Take the batch
+        x_batch = self.x_val[batch_num*128:(batch_num+1)*128]
+        y_batch = self.y_val[batch_num*128:(batch_num+1)*128]
 
         x_batch = pad_sequence(x_batch).cuda()
         y_batch = pad_sequence(y_batch).cuda().t()
