@@ -4,6 +4,8 @@ import os
 import string
 from torch.utils.data import Dataset
 from torch.nn.utils.rnn import pad_sequence
+from data.names_heise.transformations import name_importance_map
+print(name_importance_map)
 
 all_letters = string.ascii_letters + " .,;'"
 n_letters = len(all_letters)
