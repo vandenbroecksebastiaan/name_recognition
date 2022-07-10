@@ -1,12 +1,10 @@
 import torch
 import numpy as np
 import os
+import json
 import string
 from torch.utils.data import Dataset
 from torch.nn.utils.rnn import pad_sequence
-from data.names_heise.transformations import name_importance_map
-print(name_importance_map)
-
 all_letters = string.ascii_letters + " .,;'"
 n_letters = len(all_letters)
 
@@ -50,8 +48,8 @@ def load_data():
     # Do some tranformations
     data = data[np.any([data[:, 0] == "Arabic",
                         data[:, 0] == "Russian",
-                        data[:, 0] == "English"]
-                , axis=0)]
+                        data[:, 0] == "English"],
+                axis=0)]
 
     # Oversample the minority classes
     keys, counts = np.unique(data[:, 0], return_counts=True)
@@ -84,6 +82,47 @@ def load_data():
     countries_to_factor_map["English"] = torch.Tensor([0, 0, 1])
 
     y_data = [countries_to_factor_map[i] for i in y_data]
+
+    return x_data, y_data
+
+
+def load_data_heise():
+    torch.set_printoptions(sci_mode=False)
+    with open("data/names_heise/transformed_names_heise.json") as file:
+        data = json.load(file)
+    x_data = np.array(list(data.keys()))
+    y_data = np.array(list(data.values()), dtype=object)
+
+    # The data can have multiple occurence scores for a name.
+    # Therefore, we would like to keep the country that is the most important
+    # for a name.
+    for idx, array in enumerate(y_data):
+        # For every country we are going to take note of the occurence and
+        # index
+        occurences = [list(i.values())[0] for i in array]
+        max_occurence = max(occurences)
+        max_index = occurences.index(max_occurence)
+        # Now we can use the max_index to select the country from array
+        y_data[idx] = list(array[max_index].keys())[0]
+
+    # Shuffle the arrays together
+    randomize = np.arange(len(x_data))
+    np.random.shuffle(randomize)
+    x_data = x_data[randomize]
+    y_data = y_data[randomize]
+
+    # One hot encode the name
+    x_data = [name_to_tensor(i) for i in x_data]
+
+    # Factorise the target
+    factor_map = {}
+    unique_countries = np.unique(y_data)
+    for idx, country in enumerate(unique_countries):
+        tensor = torch.zeros((1, len(unique_countries)), dtype=torch.float)
+        tensor[:, idx] = 1
+        factor_map[country] = tensor
+
+    y_data = torch.vstack([factor_map[i] for i in y_data])
 
     return x_data, y_data
 

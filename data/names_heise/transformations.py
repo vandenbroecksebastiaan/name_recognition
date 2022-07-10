@@ -1,3 +1,6 @@
+import json
+from unidecode import unidecode
+
 with open("data/names_heise/nam_dict.txt", "rb") as text:
     temp = text.read()
     temp = temp.split(b"\n")
@@ -21,7 +24,7 @@ for counter, idx in enumerate(range(countries_idx, data_idx-19)):
     # These are the lines that contain the countries
     if counter % 3 == 0:
         country = line.strip()
-        country = country.decode("iso8859-1")
+        country = country.decode("iso8859-1").lower()
         country = "".join(i for i in country if i.isalnum())
     # These are the lines that contain the index
     if counter % 3 == 1:
@@ -35,7 +38,8 @@ name_importance_map = {}
 for idx in range(data_idx, len(temp)-1):
     line = temp[idx]
     name = line[:10]
-    name = name.decode("iso8859-1")
+    name = name.decode("iso8859-1").lower()
+    name = unidecode(name)
     name = "".join(i for i in name if i.isalnum())
     name = name.strip()
 
@@ -51,12 +55,16 @@ for idx in range(data_idx, len(temp)-1):
         importance = int(number)
         if country_idx != -1:
             country = idx_country_map[country_idx]
-            country_importance.append([country, importance])
+            country_importance.append({country: importance})
 
     name_importance_map[name] = country_importance
 
+# Check if there are names that do not have any countries associated to it
+to_delete = [key for key in name_importance_map
+             if len(name_importance_map[key]) == 0]
+for key in to_delete:
+    del name_importance_map[key]
+
 # Lastly, write the names to a file
-with open("transformed_names_heise.txt", "w") as file:
-    for i, j in name_importance_map.items():
-        occurences = "".join([str(k) for k in j])
-        file.write(i + "|[" + occurences + "]\n")
+with open("data/names_heise/transformed_names_heise.json", "w") as file:
+    json.dump(name_importance_map, file)

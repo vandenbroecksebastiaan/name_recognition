@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 
 
@@ -13,6 +12,7 @@ class RNN(nn.Module):
         self.fc1 = nn.Linear(hidden_dim, int(hidden_dim / 2))
         self.fc2 = nn.Linear(int(hidden_dim / 2), int(hidden_dim / 4))
         self.fc3 = nn.Linear(int(hidden_dim / 4), output_dim)
+        self.lrelu = nn.LeakyReLU()
         self.sm = nn.Softmax(dim=1)
 
     def forward(self, x):
@@ -21,13 +21,13 @@ class RNN(nn.Module):
         out = out[-1, :]
 
         out = self.fc1(out)
-        out = nn.functional.relu(out)
+        out = self.lrelu(out)
 
         out = self.fc2(out)
-        out = nn.functional.relu(out)
+        out = self.lrelu(out)
 
         out = self.fc3(out)
-        out = nn.functional.relu(out)
+        out = self.lrelu(out)
         out = self.sm(out)
 
         return out
