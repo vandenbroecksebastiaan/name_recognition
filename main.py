@@ -1,5 +1,5 @@
-from model import RNN
-from load_data import NameDataset, load_data, load_data_heise, tensor_to_name
+from model import model
+from load_data import NameDataset, collate_fn
 from train import train
 
 import torch
@@ -22,21 +22,28 @@ def main():
     torch.cuda.device("cuda")
 
     # Load the data
-    x_data, y_data = load_data_heise()
-    dataset = NameDataset(x_data, y_data, batch_size=256)
+    dataset = NameDataset()
+    train_set, val_set, test_set = torch.utils.data.random_split(
+        dataset, lengths=[35947, 4494, 4494]
+    )
 
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=256,
+                                               collate_fn=collate_fn)
+    val_loader = torch.utils.data.DataLoader(val_set, batch_size=1024,
+                                             collate_fn=collate_fn)
+    test_loader = torch.utils.data.DataLoader(test_set, batch_size=1024,
+                                              collate_fn=collate_fn)
+
+    # Train the model
     n_categories = 55
     n_letters = 57
 
-    rnn = RNN(input_dim=n_letters,
-              hidden_dim=2056,
-              layer_dim=3,
-              output_dim=n_categories).cuda()
+    rnn = model(input_dim=n_letters,
+                hidden_dim=2056,
+                layer_dim=3,
+                output_dim=n_categories).cuda()
 
-    train_loss = train(rnn, dataset)
-
-    plt.plot(range(len(train_loss)), train_loss)
-    plt.savefig("output/temp.png")
+    train_loss = train(rnn, train_loader, val_loader)
 
 
 if __name__ == "__main__":
