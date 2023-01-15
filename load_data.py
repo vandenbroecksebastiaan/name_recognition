@@ -5,17 +5,21 @@ import json
 import string
 from torch.utils.data import Dataset
 from torch.nn.utils.rnn import pad_sequence
+
+
 all_letters = string.ascii_letters + " .,;'"
 n_letters = len(all_letters)
 
 
 def tensor_to_name(tensor):
     name = ""
-    for i in tensor:
-        bool_tensor = i == 1
-        index = bool_tensor.nonzero(as_tuple=True)[1][0]
-        letter = all_letters[index]
-        name += letter
+    for char in tensor:
+        try: 
+            char_index = (char == 1).nonzero(as_tuple=True)[0].item()
+        except ValueError:
+            return name
+        name = name + all_letters[char_index]
+
     return name
 
 
@@ -124,6 +128,16 @@ def load_data_heise():
 
     y_data = torch.vstack([factor_map[i] for i in y_data])
 
+    # Write factor_map to disk
+    country_to_int = {}
+    for i, j in factor_map.items():
+        country_to_int[i] =  (j[0] == 1).nonzero(as_tuple=True)[0].item()
+
+    with open("data/country_to_int.json", "w") as file:
+        json.dump(country_to_int, file)
+    with open("data/int_to_country.json", "w") as file:
+        json.dump({j:i for i,j in country_to_int.items()}, file)
+
     return x_data, y_data
 
 
@@ -139,11 +153,14 @@ class NameDataset(Dataset):
         self.batch_size = batch_size
         self.max_batch = self.len // self.batch_size
 
+
     def __len__(self):
         return len(self.x_data)
 
+
     def __getitem__(self, idx):
         return (self.x_data[idx], self.y_data[idx])
+
 
     def get_train_batch(self, batch_num):
         x_batch = self.x_train[batch_num*self.batch_size:
@@ -151,21 +168,22 @@ class NameDataset(Dataset):
         y_batch = self.y_train[batch_num*self.batch_size:
                                (batch_num+1)*self.batch_size]
 
-        x_batch = pad_sequence(x_batch).cuda()
+        x_batch = pad_sequence(x_batch).cuda().permute(1, 0, 2)
         y_batch = pad_sequence(y_batch).cuda().t()
 
         return x_batch, y_batch
 
+
     def get_val_batch(self):
         # Get the number of a batch
-        max_batch = len(self.x_val) // 512
+        max_batch = len(self.x_val) // self.batch_size
         batch_num = torch.randint(low=0, high=max_batch, size=(1, ))
 
         # Take the batch
-        x_batch = self.x_val[batch_num*512:(batch_num+1)*512]
-        y_batch = self.y_val[batch_num*512:(batch_num+1)*512]
+        x_batch = self.x_val[batch_num*self.batch_size:(batch_num+1)*self.batch_size]
+        y_batch = self.y_val[batch_num*self.batch_size:(batch_num+1)*self.batch_size]
 
-        x_batch = pad_sequence(x_batch).cuda()
+        x_batch = pad_sequence(x_batch).cuda().permute(1, 0, 2)
         y_batch = pad_sequence(y_batch).cuda().t()
 
         return x_batch, y_batch
