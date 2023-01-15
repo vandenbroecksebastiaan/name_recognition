@@ -42,11 +42,10 @@ def collate_fn(tensor):
 
 
 class NameDataset(Dataset):
-    def __init__(self):
-        data = self.__load_data()
+    def __init__(self, reduce=False):
+        data = self.__load_data(reduce=reduce)
         self.x_data = data[0]
-        self.y_data = data[1]
-        self.dim = len(self.x_data)
+        self.y_data = torch.Tensor(data[1])
 
     def __len__(self):
         return len(self.x_data)
@@ -54,7 +53,7 @@ class NameDataset(Dataset):
     def __getitem__(self, idx):
         return (self.x_data[idx], self.y_data[idx])
 
-    def __load_data(self):
+    def __load_data(self, reduce):
         torch.set_printoptions(sci_mode=False)
         with open("data/names_heise/transformed_names_heise.json") as file:
             data = json.load(file)
@@ -67,6 +66,10 @@ class NameDataset(Dataset):
             max_occurence = max(occurences)
             max_index = occurences.index(max_occurence)
             y_data[idx] = list(array[max_index].keys())[0]
+
+        if reduce:
+            x_data = x_data[np.isin(y_data, ["china", "usa", "italy", "thenetherlands"])]
+            y_data = y_data[np.isin(y_data, ["china", "usa", "italy", "thenetherlands"])]
 
         # One hot encode the name
         x_data = [name_to_tensor(i) for i in x_data]
@@ -93,7 +96,9 @@ class NameDataset(Dataset):
 
         return x_data, y_data
 
-    def __reduce(self):
+    def reduce(self):
+        """Reduces the dataset to the most common classes"""
+        # Keep countries with argmax(y) in [9, 53, 26]
         pass
 
     def __make_weights(self):
