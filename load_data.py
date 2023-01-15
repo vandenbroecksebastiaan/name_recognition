@@ -158,12 +158,12 @@ class NameDataset(Dataset):
 
     def get_val_batch(self):
         # Get the number of a batch
-        max_batch = len(self.x_val) // 128
+        max_batch = len(self.x_val) // 512
         batch_num = torch.randint(low=0, high=max_batch, size=(1, ))
 
         # Take the batch
-        x_batch = self.x_val[batch_num*128:(batch_num+1)*128]
-        y_batch = self.y_val[batch_num*128:(batch_num+1)*128]
+        x_batch = self.x_val[batch_num*512:(batch_num+1)*512]
+        y_batch = self.y_val[batch_num*512:(batch_num+1)*512]
 
         x_batch = pad_sequence(x_batch).cuda()
         y_batch = pad_sequence(y_batch).cuda().t()

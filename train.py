@@ -4,11 +4,7 @@ import torch
 
 def train(rnn, dataset):
 
-    model = rnn
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-    # scheduler = torch.optim.lr_scheduler.CyclicLR(
-    #     optimizer, base_lr=0.0001, max_lr=0.05, cycle_momentum=True
-    # )
+    optimizer = torch.optim.Adam(rnn.parameters(), lr=0.00001)
     criterion = torch.nn.CrossEntropyLoss()
     max_batch = dataset.max_batch
     train_loss = []
@@ -21,11 +17,12 @@ def train(rnn, dataset):
             x_batch, y_batch = dataset.get_train_batch(idx)
 
             # Make a prediction and calculate the loss
+            optimizer.zero_grad()
             output = rnn(x_batch)
+            # NOTE: y_batch should be an indicator
             loss = criterion(output, y_batch)
             loss.backward()
             optimizer.step()
-            optimizer.zero_grad()
 
             """
             print(loss)
@@ -36,16 +33,11 @@ def train(rnn, dataset):
 
             if idx % 100 == 0:
 
-                # x_val, y_val = dataset.get_val_batch()
-                # val_output = rnn(x_val)
-                # val_loss = criterion(val_output, y_val)
+                x_val, y_val = dataset.get_val_batch()
+                val_output = rnn(x_val)
+                val_loss = criterion(val_output, y_val)
                 train_loss.append(loss.item())
                 print(epoch, idx, round(loss.item(), 4),
-                      optimizer.param_groups[0]['lr'], "\t")
-                # round(val_loss.item(), 4))
-                # print(output[0, :].tolist(),
-                #       y_batch[0, :].tolist())
-
-            # scheduler.step()
+                      round(val_loss.item(), 4))
 
     return train_loss
