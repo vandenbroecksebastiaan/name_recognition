@@ -12,10 +12,22 @@ with open("data/int_to_country.json") as file:
 
 # TODO: make an implementation that uses 1d convs
 
+EPOCHS = 5
+
 def print_n_params(model):
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
     params = sum([np.prod(p.size()) for p in model_parameters])
     print(params)
+
+
+def plot_losses(train_losses, val_losses):
+    plt.figure(figsize=(7, 5))
+    plt.plot(train_losses, label="Train loss")
+    plt.plot(val_losses, label="Validation loss")
+    plt.legend()
+    plt.xlabel("Iteration")
+    plt.ylabel("Cross entropy loss")
+    plt.savefig("output/losses.png", dpi=300, bbox_inches="tight")
 
 
 def main():
@@ -27,24 +39,27 @@ def main():
         dataset, lengths=[11300, 1413, 1413]
     )
 
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=256,
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=128,
                                                collate_fn=collate_fn)
     val_loader = torch.utils.data.DataLoader(val_set, batch_size=512,
                                              collate_fn=collate_fn)
-    test_loader = torch.utils.data.DataLoader(test_set, batch_size=512,
-                                              collate_fn=collate_fn)
 
     # Train the model
     n_categories = 55
     n_letters = 57
 
     rnn = model(input_dim=n_letters,
-                hidden_dim=5000,
-                layer_dim=1,
-                linear_dim=2056,
-                output_dim=n_categories).cuda()
+                  hidden_dim=5000,
+                  layer_dim=1,
+                  linear_dim=2056,
+                  output_dim=n_categories).cuda()
 
-    train_loss = train(rnn, train_loader, val_loader)
+    train_losses, val_losses = train(rnn, train_loader, val_loader, EPOCHS)
+
+    # Save the model
+    torch.save(rnn, "output/model.pt")
+
+    plot_losses(train_losses, val_losses)
 
 
 if __name__ == "__main__":

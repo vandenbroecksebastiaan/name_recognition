@@ -16,6 +16,7 @@ class model(nn.Module):
         self.relu = nn.ReLU()
         self.batchnorm1 = nn.BatchNorm1d(num_features=int(linear_dim/2))
         self.batchnorm2 = nn.BatchNorm1d(num_features=int(linear_dim/4))
+        self.dropout = nn.Dropout(p=0.7)
         self.sm = nn.Softmax(dim=1)
 
 
@@ -26,9 +27,11 @@ class model(nn.Module):
         out = self.fc1(out)
         out = self.batchnorm1(out)
         out = self.relu(out)
+        out = self.dropout(out)
 
         out = self.fc2(out)
         out = self.batchnorm2(out)
         out = self.relu(out)
+        out = self.dropout(out)
 
         return self.fc3(out)

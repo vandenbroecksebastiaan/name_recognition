@@ -38,7 +38,7 @@ def collate_fn(tensor):
     x_batch = pad_sequence(x_batch).cuda().permute(1, 0, 2)
     y_batch = pad_sequence(y_batch).cuda().t()
 
-    return (x_batch, y_batch)
+    return x_batch, y_batch
 
 
 class NameDataset(Dataset):
