@@ -12,7 +12,7 @@ with open("data/int_to_country.json") as file:
 
 # TODO: make an implementation that uses 1d convs
 
-EPOCHS = 5
+EPOCHS = 10
 
 def print_n_params(model):
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
@@ -45,16 +45,13 @@ def main():
                                              collate_fn=collate_fn)
 
     # Train the model
-    n_categories = 55
+    n_categories = 4
     n_letters = 57
 
-    rnn = model(input_dim=n_letters,
-                  hidden_dim=5000,
-                  layer_dim=1,
-                  linear_dim=2056,
-                  output_dim=n_categories).cuda()
+    rnn = model(input_dim=n_letters, output_dim=n_categories).cuda()
 
-    train_losses, val_losses = train(rnn, train_loader, val_loader, EPOCHS)
+    train_losses, val_losses = train(rnn, train_loader, val_loader,
+                                     dataset.weights, EPOCHS)
 
     # Save the model
     torch.save(rnn, "output/model.pt")

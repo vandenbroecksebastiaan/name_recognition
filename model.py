@@ -2,21 +2,20 @@ import torch.nn as nn
 
 
 class model(nn.Module):
-    def __init__(self, input_dim, hidden_dim, layer_dim, linear_dim, output_dim):
+    def __init__(self, input_dim, output_dim):
         super(model, self).__init__()
-        self.hidden_dim = hidden_dim
-        self.layer_dim = layer_dim
 
-        self.rnn = nn.LSTM(input_dim, hidden_dim, layer_dim, batch_first=True)
+        self.rnn = nn.LSTM(input_size=input_dim, hidden_size=1028,
+                           num_layers=3, batch_first=True, bidirectional=True)
 
-        self.fc1 = nn.Linear(hidden_dim, int(linear_dim/2))
-        self.fc2 = nn.Linear(int(linear_dim/2), int(linear_dim/4))
-        self.fc3 = nn.Linear(int(linear_dim/4), output_dim)
+        self.fc1 = nn.Linear(2056, 2048)
+        self.fc2 = nn.Linear(2048, 1024)
+        self.fc3 = nn.Linear(1024, output_dim)
 
         self.relu = nn.ReLU()
-        self.batchnorm1 = nn.BatchNorm1d(num_features=int(linear_dim/2))
-        self.batchnorm2 = nn.BatchNorm1d(num_features=int(linear_dim/4))
-        self.dropout = nn.Dropout(p=0.7)
+        self.batchnorm1 = nn.BatchNorm1d(num_features=2048)
+        self.batchnorm2 = nn.BatchNorm1d(num_features=1024)
+        self.dropout = nn.Dropout(p=0.8)
         self.sm = nn.Softmax(dim=1)
 
 

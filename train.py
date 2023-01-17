@@ -5,10 +5,10 @@ with open("data/int_to_country.json") as file:
     int_to_country = json.load(file)
 
 
-def train(model, train_loader, val_loader, EPOCHS):
+def train(model, train_loader, val_loader, weights, EPOCHS):
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-    criterion = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    criterion = torch.nn.CrossEntropyLoss(weight=weights)
 
     train_losses = []
     val_losses = []

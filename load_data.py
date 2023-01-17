@@ -46,6 +46,7 @@ class NameDataset(Dataset):
         data = self.__load_data(reduce=reduce)
         self.x_data = data[0]
         self.y_data = torch.Tensor(data[1])
+        self.weights = self.__make_weights()
 
     def __len__(self):
         return len(self.x_data)
@@ -70,6 +71,11 @@ class NameDataset(Dataset):
         if reduce:
             x_data = x_data[np.isin(y_data, ["china", "usa", "italy", "thenetherlands"])]
             y_data = y_data[np.isin(y_data, ["china", "usa", "italy", "thenetherlands"])]
+
+        # Order the names from short to long
+        sort_indices = np.argsort([len(i) for i in x_data])
+        x_data = x_data[sort_indices]
+        y_data = y_data[sort_indices]
 
         # One hot encode the name
         x_data = [name_to_tensor(i) for i in x_data]
@@ -96,14 +102,9 @@ class NameDataset(Dataset):
 
         return x_data, y_data
 
-    def reduce(self):
-        """Reduces the dataset to the most common classes"""
-        # Keep countries with argmax(y) in [9, 53, 26]
-        pass
-
     def __make_weights(self):
         class_count = torch.sum(self.y_data, dim=0)
-        class_weights = 1 / class_count
+        class_weights = min(class_count) / class_count
         class_weights = class_weights.cuda()
 
         return class_weights
