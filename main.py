@@ -10,9 +10,7 @@ import json
 with open("data/int_to_country.json") as file:
     int_to_country = json.load(file)
 
-# TODO: make an implementation that uses 1d convs
-
-EPOCHS = 10
+EPOCHS = 20
 
 def print_n_params(model):
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
