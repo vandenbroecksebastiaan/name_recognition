@@ -1,0 +1,1 @@
+This repo presents a recurrent neural network (LSTM) for name recognition. The model architecture consists of 3 stacked LSTM layers and 3 linear layers. It furthermore implements batch norm and dropout. An evaluation on the test set can be found in the exploration notebook.
